@@ -32,15 +32,19 @@ def local_css(file_name):
 
 local_css("styles.css")
 
-# 📊 Title
-st.title("📈 Stock Market Time Series Forecasting")
-
 # 🏷️ Ticker Input
 ticker = st.text_input("Enter Stock Ticker Symbol (e.g., AAPL, TSLA, INFY):", "AAPL")
 
-if not ticker.strip():
-    st.warning("⚠️ Please enter a stock ticker to proceed.")
+# 📥 Download Data (with fallback and check)
+try:
+    df = yf.download(ticker, start='2015-01-01', end='2024-12-31')
+    if df.empty:
+        raise ValueError(f"⚠️ No data found for '{ticker}'. Please try another valid symbol.")
+    df.index = pd.to_datetime(df.index)
+except Exception as e:
+    st.error(f"❌ Failed to fetch data for '{ticker}': {e}")
     st.stop()
+
 
 # 📥 Download Data
 try:
