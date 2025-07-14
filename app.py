@@ -9,10 +9,10 @@ from metrics import get_all_scores
 from models import arima_model, prophet_model, lstm_model
 from login import show_login, show_user_header
 
-# Set page config
+# Page config
 st.set_page_config(page_title="📈 Stock Forecast", layout="wide")
 
-# Authentication
+# --- Authentication ---
 if "authenticated" not in st.session_state:
     st.session_state["authenticated"] = False
 
@@ -20,10 +20,9 @@ if not st.session_state["authenticated"]:
     show_login()
     st.stop()
 
-# Show user info
 show_user_header()
 
-# Apply custom CSS
+# --- Load custom CSS ---
 def local_css(file_name):
     try:
         with open(file_name) as f:
@@ -33,36 +32,40 @@ def local_css(file_name):
 
 local_css("styles.css")
 
-# Ticker input
+# --- Ticker input ---
 ticker = st.text_input("Enter Stock Ticker Symbol (e.g., AAPL, TSLA, INFY):", "INFY.NS")
 
-# Download data with fallback
+# --- Download data with fallback ---
 try:
     df = yf.download(ticker, start='2015-01-01', end='2024-12-31')
     if df.empty:
-        raise ValueError(f"⚠️ No data found for '{ticker}'. Please try another valid symbol.")
-    df.index = pd.to_datetime(df.index)
+        raise ValueError(f"No data found for '{ticker}'")
 except Exception as e:
     st.warning(f"⚠️ Online fetch failed: {e}. Trying fallback data...")
     try:
-        df = pd.read_csv("fallback_data.csv", parse_dates=True, index_col=0)
-        st.success("✅ Loaded fallback stock data.")
+        df = pd.read_csv("fallback_data.csv", index_col=0)
+        st.success("✅ Fallback data loaded from fallback_data.csv.")
     except FileNotFoundError:
         st.error("❌ No fallback data found. Please upload 'fallback_data.csv'.")
         st.stop()
 
-# Show raw data
+# --- Ensure datetime index ---
+if not pd.api.types.is_datetime64_any_dtype(df.index):
+    df.index = pd.to_datetime(df.index, errors='coerce')
+df = df[~df.index.isna()]
+
+# --- Show data ---
 st.subheader(f"📄 Raw Data for {ticker}")
 st.dataframe(df.tail())
 
-# Plot closing prices
+# --- Closing Price Chart ---
 st.subheader("📉 Closing Price Trend")
 fig, ax = plt.subplots()
 df['Close'].plot(ax=ax, title=f"{ticker} - Closing Prices", color='blue')
 ax.set_ylabel("Price")
 st.pyplot(fig)
 
-# Model selection
+# --- Model selection ---
 st.subheader("🔮 Choose a Forecasting Model")
 model_choice = st.selectbox("Select Model", ["None", "ARIMA", "Prophet", "LSTM"])
 
@@ -78,7 +81,7 @@ elif model_choice == "LSTM":
     with st.expander("🧠 LSTM Forecast"):
         lstm_model.run_lstm(df)
 
-# Model performance
+# --- Model Scores ---
 st.subheader("📊 Model Performance Comparison")
 scores = get_all_scores()
 
@@ -104,7 +107,7 @@ if scores:
 else:
     st.info("ℹ️ Run at least one model to see comparison.")
 
-# Extra visualizations
+# --- Extra Visualizations ---
 with st.expander("📊 Extra Data Visualizations"):
     if isinstance(df.columns, pd.MultiIndex):
         df.columns = df.columns.map(lambda x: x[0])
@@ -166,6 +169,7 @@ with st.expander("📊 Extra Data Visualizations"):
     fig_month = px.bar(monthly_df, x='Month', y='AvgClose', title="Monthly Average Close Price", color='AvgClose')
     fig_month.update_traces(marker_color='teal')
     st.plotly_chart(fig_month)
+
 
 
 # # 📈 All Combined Forecasts
