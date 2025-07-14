@@ -1,31 +1,7 @@
 # login.py
 import streamlit as st
-import pyrebase
-import firebase_admin
 import re
-from firebase_config import auth
-from firebase_admin import credentials, firestore
 from streamlit_js_eval import streamlit_js_eval  # pip install streamlit-js-eval
-
-# Firebase Config
-firebaseConfig = {
-    "apiKey": "AIzaSyBg8HSYkcrhvA1zOsv7XOcrQlH3uwfw2sc",
-    "authDomain": "stockforecasting1107.firebaseapp.com",
-    "projectId": "stockforecasting1107",
-    "storageBucket": "stockforecasting1107.appspot.com",
-    "messagingSenderId": "528666678237",
-    "appId": "1:528666678237:web:0c4958b6dacf2898fc5c34",
-    "databaseURL": "https://stockforecasting1107-default-rtdb.firebaseio.com/"
-}
-
-firebase = pyrebase.initialize_app(firebaseConfig)
-auth = firebase.auth()
-
-if not firebase_admin._apps:
-    cred = credentials.Certificate("firebase-adminsdk.json")
-    firebase_admin.initialize_app(cred)
-
-firestore_db = firestore.client()
 
 # Restore session from localStorage
 def restore_session():
@@ -79,33 +55,21 @@ def show_login():
                 elif not password:
                     st.error("❗ Please enter your password.")
                 else:
-                    try:
-                        user = auth.sign_in_with_email_and_password(email, password)
-                        uid = user['localId']
-                        user_info = firestore_db.collection("users").document(uid).get()
-                        if user_info.exists:
-                            user_data = user_info.to_dict()
-                            st.session_state["authenticated"] = True
-                            st.session_state["user"] = user_data
-                            if remember:
-                                streamlit_js_eval(js_expressions=f"localStorage.setItem('user', `{user_data}`)", key="set_user")
-                            st.rerun()
-                    except Exception as e:
-                        st.error(f"❌ Login Failed: {e}")
+                    # Placeholder logic
+                    user_data = {
+                        "first_name": "Demo",
+                        "last_name": "User",
+                        "email": email
+                    }
+                    st.session_state["authenticated"] = True
+                    st.session_state["user"] = user_data
+                    if remember:
+                        streamlit_js_eval(js_expressions=f"localStorage.setItem('user', `{user_data}`)", key="set_user")
+                    st.success("✅ Logged in successfully!")
+                    st.rerun()
 
         with st.expander("Forgot Password?"):
-            with st.form("forgot_form"):
-                reset_email = st.text_input("Enter your email to reset")
-                reset_submit = st.form_submit_button("Send Reset Link")
-                if reset_submit:
-                    if not re.match(r"^[\w\.-]+@[\w\.-]+\.\w+$", reset_email):
-                        st.error("❗ Enter a valid email address.")
-                    else:
-                        try:
-                            auth.send_password_reset_email(reset_email)
-                            st.success("📧 Reset link sent to your email.")
-                        except Exception as e:
-                            st.error(f"❌ Error: {e}")
+            st.info("🔒 This feature is disabled. Please contact support.")
 
     # --------------------- REGISTER ---------------------
     with tabs[1]:
@@ -128,23 +92,14 @@ def show_login():
                 elif password != confirm:
                     st.error("❗ Passwords do not match.")
                 else:
-                    try:
-                        user = auth.create_user_with_email_and_password(email, password)
-                        uid = user['localId']
-                        user_data = {
-                            "first_name": first,
-                            "last_name": last,
-                            "email": email
-                        }
-                        firestore_db.collection("users").document(uid).set(user_data)
-                        st.success("✅ Registered successfully. Redirecting to login...")
-                        st.session_state.login_tab = 0
-                        st.rerun()
-                    except Exception as e:
-                        if "EMAIL_EXISTS" in str(e):
-                            st.error("❗ This email is already registered. Please login instead.")
-                        else:
-                            st.error(f"❌ Registration Error: {e}")
+                    user_data = {
+                        "first_name": first,
+                        "last_name": last,
+                        "email": email
+                    }
+                    st.success("✅ Registered successfully. Redirecting to login...")
+                    st.session_state.login_tab = 0
+                    st.rerun()
 
     st.markdown("<hr>", unsafe_allow_html=True)
     if st.button("🔐 Sign in with Google (Coming Soon)"):
