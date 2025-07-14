@@ -32,7 +32,7 @@ google-auth-oauthlib==1.2.0
 google-cloud-firestore==2.13.0
 google-cloud-storage==2.15.0
 grpcio==1.62.0
-h5py==3.9.0
+h5py==3.10.0
 httpx==0.26.0
 idna==3.7
 joblib==1.4.2
