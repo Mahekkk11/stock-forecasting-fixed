@@ -24,11 +24,13 @@ show_user_header()
 
 # 🎨 Apply Custom CSS
 def local_css(file_name):
-    with open(file_name) as f:
-        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+    try:
+        with open(file_name) as f:
+            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+    except FileNotFoundError:
+        st.warning("⚠️ styles.css not found. Using default theme.")
 
 local_css("styles.css")
-
 
 # 📊 Title
 st.title("📈 Stock Market Time Series Forecasting")
@@ -36,9 +38,21 @@ st.title("📈 Stock Market Time Series Forecasting")
 # 🏷️ Ticker Input
 ticker = st.text_input("Enter Stock Ticker Symbol (e.g., AAPL, TSLA, INFY):", "AAPL")
 
+if not ticker.strip():
+    st.warning("⚠️ Please enter a stock ticker to proceed.")
+    st.stop()
+
 # 📥 Download Data
-df = yf.download(ticker, start='2015-01-01', end='2024-12-31')
-df.index = pd.to_datetime(df.index)
+try:
+    df = yf.download(ticker, start='2015-01-01', end='2024-12-31')
+    df.index = pd.to_datetime(df.index)
+
+    if df.empty:
+        st.error(f"❌ No data found for '{ticker}'. Please try a valid stock symbol.")
+        st.stop()
+except Exception as e:
+    st.error(f"⚠️ Error fetching data: {e}")
+    st.stop()
 
 # 📄 Raw Data Preview
 st.subheader(f"📄 Raw Data for {ticker}")
@@ -95,83 +109,69 @@ if scores:
 else:
     st.info("ℹ️ Run at least one model to see comparison.")
 
-
-
-
-# 📈 Extra Visualizations Toggle
 # 📈 Extra Visualizations Section
 with st.expander("📊 Extra Data Visualizations"):
-    # Flatten multi-level column index (if needed)
     if isinstance(df.columns, pd.MultiIndex):
         df.columns = df.columns.map(lambda x: x[0])
 
-    # 30-day & 100-day moving averages
     df['MA30'] = df['Close'].rolling(window=30).mean()
     df['MA100'] = df['Close'].rolling(window=100).mean()
     st.write("### Moving Averages (30 & 100 days)")
     fig_ma, ax_ma = plt.subplots()
-    df['Close'].plot(ax=ax_ma, label='AAPL', color='blue')
+    df['Close'].plot(ax=ax_ma, label=ticker, color='blue')
     df['MA30'].plot(ax=ax_ma, label='30-Day MA', linestyle='--')
     df['MA100'].plot(ax=ax_ma, label='100-Day MA', linestyle='--', color='orange')
     ax_ma.legend()
     st.pyplot(fig_ma)
 
-    # Volume chart
     st.write("### Trading Volume")
     fig_vol, ax_vol = plt.subplots()
     df['Volume'].plot(ax=ax_vol, color='purple')
     ax_vol.set_ylabel("Volume")
     st.pyplot(fig_vol)
 
-    # Volume vs Close Price (Fix added here)
     st.write("### Volume vs Close Price")
     fig_vol_price = px.scatter(df, x='Volume', y='Close', title="Volume vs Close Price", color='Close')
     st.plotly_chart(fig_vol_price)
 
-    # Daily returns
     df['Daily Return'] = df['Close'].pct_change()
     st.write("### Daily Returns")
     st.line_chart(df['Daily Return'])
 
-    # Cumulative returns
     df['Cumulative Return'] = (1 + df['Daily Return']).cumprod()
     st.write("### Cumulative Return")
     st.line_chart(df['Cumulative Return'])
 
-    # Rolling volatility
     df['Rolling Volatility'] = df['Daily Return'].rolling(window=30).std()
     st.write("### Rolling 30-Day Volatility")
     st.line_chart(df['Rolling Volatility'])
 
-    # Histogram of returns
     st.write("### Histogram of Daily Returns")
     fig_hist, ax_hist = plt.subplots()
     df['Daily Return'].hist(bins=50, ax=ax_hist, color='skyblue')
     ax_hist.set_title("Histogram of Daily Returns")
     st.pyplot(fig_hist)
 
-    # Candlestick Chart
     st.write("### 💹 Candlestick Chart")
     candlestick = go.Figure(data=[
-    go.Candlestick(
-        x=df.index,
-        open=df['Open'],
-        high=df['High'],
-        low=df['Low'],
-        close=df['Close']
-    )
+        go.Candlestick(
+            x=df.index,
+            open=df['Open'],
+            high=df['High'],
+            low=df['Low'],
+            close=df['Close']
+        )
     ])
     candlestick.update_layout(title=f"{ticker} - Candlestick Chart", xaxis_title="Date", yaxis_title="Price")
     st.plotly_chart(candlestick)
 
-    # Monthly average close
     st.write("### 📆 Monthly Average Close Price")
     monthly_avg = df['Close'].resample('M').mean()
     monthly_df = pd.DataFrame({'Month': monthly_avg.index, 'AvgClose': monthly_avg.values})
-
     fig_month = px.bar(monthly_df, x='Month', y='AvgClose', title="Monthly Average Close Price", color='AvgClose')
     fig_month.update_traces(marker_color='teal')
     st.plotly_chart(fig_month)
+
 
 
 
