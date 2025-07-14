@@ -55,7 +55,6 @@ def show_login():
                 elif not password:
                     st.error("❗ Please enter your password.")
                 else:
-                    # Placeholder logic
                     user_data = {
                         "first_name": "Demo",
                         "last_name": "User",
@@ -66,7 +65,7 @@ def show_login():
                     if remember:
                         streamlit_js_eval(js_expressions=f"localStorage.setItem('user', `{user_data}`)", key="set_user")
                     st.success("✅ Logged in successfully!")
-                    st.rerun()
+                    st.experimental_rerun()
 
         with st.expander("Forgot Password?"):
             st.info("🔒 This feature is disabled. Please contact support.")
@@ -99,7 +98,7 @@ def show_login():
                     }
                     st.success("✅ Registered successfully. Redirecting to login...")
                     st.session_state.login_tab = 0
-                    st.rerun()
+                    st.experimental_rerun()
 
     st.markdown("<hr>", unsafe_allow_html=True)
     if st.button("🔐 Sign in with Google (Coming Soon)"):
@@ -118,4 +117,4 @@ def show_user_header():
                 for key in list(st.session_state.keys()):
                     del st.session_state[key]
                 streamlit_js_eval(js_expressions="localStorage.removeItem('user')", key="clear_user")
-                st.rerun()
+                st.experimental_rerun()
