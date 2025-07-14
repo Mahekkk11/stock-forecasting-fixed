@@ -1,11 +1,10 @@
-# login.py
 import streamlit as st
 import pyrebase
 import firebase_admin
 import re
 from firebase_config import auth
 from firebase_admin import credentials, firestore
-from streamlit_js_eval import streamlit_js_eval  # pip install streamlit-js-eval
+from streamlit_js_eval import streamlit_js_eval
 
 # Firebase Config
 firebaseConfig = {
@@ -137,8 +136,8 @@ def show_login():
                             "email": email
                         }
                         firestore_db.collection("users").document(uid).set(user_data)
-                        st.success("✅ Registered successfully. Redirecting to login...")
-                        st.session_state.login_tab = 0
+                        st.success("✅ Registered successfully. Please log in.")
+                        st.session_state.login_tab = 0  # Stay on login
                         st.rerun()
                     except Exception as e:
                         if "EMAIL_EXISTS" in str(e):
