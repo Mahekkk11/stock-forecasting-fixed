@@ -26,7 +26,6 @@ if not firebase_admin._apps:
 
 firestore_db = firestore.client()
 
-# Restore session from localStorage
 def restore_session():
     js_user = streamlit_js_eval(js_expressions="localStorage.getItem('user')", key="restore_user")
     if js_user and isinstance(js_user, str):
@@ -64,19 +63,19 @@ def show_login():
 
     tabs = st.tabs(["🔐 Login", "✍️ Register"])
 
-    # --------------------- LOGIN ---------------------
+    # ---------------- LOGIN ----------------
     with tabs[0]:
         with st.form("login_form"):
-            email = st.text_input("Email")
-            password = st.text_input("Password", type="password")
+            email = st.text_input("Email", key="login_email")
+            password = st.text_input("Password", type="password", key="login_password")
             remember = st.checkbox("Remember Me", key="login_remember")
             login_btn = st.form_submit_button("Login")
 
             if login_btn:
-                if not re.match(r"^[\w\.-]+@[\w\.-]+\.\w+$", email):
+                if not email or not password:
+                    st.error("❗ Both email and password are required.")
+                elif not re.match(r"^[\w\.-]+@[\w\.-]+\.\w+$", email):
                     st.error("❗ Enter a valid email address.")
-                elif not password:
-                    st.error("❗ Please enter your password.")
                 else:
                     try:
                         user = auth.sign_in_with_email_and_password(email, password)
@@ -88,25 +87,28 @@ def show_login():
                             st.session_state["user"] = user_data
                             if remember:
                                 streamlit_js_eval(js_expressions=f"localStorage.setItem('user', `{user_data}`)", key="set_user")
-                            st.rerun()
+                            st.success("✅ Login successful!")
+                            st.experimental_rerun()
+                        else:
+                            st.error("❌ User data not found.")
                     except Exception as e:
-                        st.error(f"❌ Login Failed: {e}")
+                        st.error("❌ Login Failed: Incorrect email or password.")
 
         with st.expander("Forgot Password?"):
             with st.form("forgot_form"):
                 reset_email = st.text_input("Enter your email to reset")
                 reset_submit = st.form_submit_button("Send Reset Link")
                 if reset_submit:
-                    if not re.match(r"^[\w\.-]+@[\w\.-]+\.\w+$", reset_email):
+                    if not reset_email or not re.match(r"^[\w\.-]+@[\w\.-]+\.\w+$", reset_email):
                         st.error("❗ Enter a valid email address.")
                     else:
                         try:
                             auth.send_password_reset_email(reset_email)
                             st.success("📧 Reset link sent to your email.")
                         except Exception as e:
-                            st.error(f"❌ Error: {e}")
+                            st.error(f"❌ Error sending reset email.")
 
-    # --------------------- REGISTER ---------------------
+    # ---------------- REGISTER ----------------
     with tabs[1]:
         with st.form("register_form"):
             first = st.text_input("First Name")
@@ -118,7 +120,7 @@ def show_login():
             register_btn = st.form_submit_button("Register")
 
             if register_btn:
-                if not first.strip() or not last.strip():
+                if not first or not last:
                     st.error("❗ Please fill in your full name.")
                 elif not re.match(r"^[\w\.-]+@[\w\.-]+\.\w+$", email):
                     st.error("❗ Enter a valid email address.")
@@ -137,8 +139,8 @@ def show_login():
                         }
                         firestore_db.collection("users").document(uid).set(user_data)
                         st.success("✅ Registered successfully. Please log in.")
-                        st.session_state.login_tab = 0  # Stay on login
-                        st.rerun()
+                        st.session_state.login_tab = 0
+                        st.experimental_rerun()
                     except Exception as e:
                         if "EMAIL_EXISTS" in str(e):
                             st.error("❗ This email is already registered. Please login instead.")
@@ -153,13 +155,13 @@ def show_login():
 def show_user_header():
     if st.session_state.get("authenticated"):
         user = st.session_state.get("user", {})
-        name = f"{user.get('first_name', '')} {user.get('last_name', '')}"
+        name = f"{user.get('first_name', '')} {user.get('last_name', '')}".strip()
         col1, col2 = st.columns([0.9, 0.1])
         with col1:
-            st.markdown(f"<h5 style='margin-bottom:0;'>👤 {name}</h5>", unsafe_allow_html=True)
+            st.markdown(f"<h5 style='margin-bottom:0;'>👤 {name if name else 'Unknown User'}</h5>", unsafe_allow_html=True)
         with col2:
             if st.button("Logout"):
                 for key in list(st.session_state.keys()):
                     del st.session_state[key]
                 streamlit_js_eval(js_expressions="localStorage.removeItem('user')", key="clear_user")
-                st.rerun()
+                st.experimental_rerun()
