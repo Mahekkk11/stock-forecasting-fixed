@@ -9,10 +9,10 @@ from metrics import get_all_scores
 from models import arima_model, prophet_model, lstm_model
 from login import show_login, show_user_header
 
-# Page config
+# Set page config
 st.set_page_config(page_title="📈 Stock Forecast", layout="wide")
 
-# --- Authentication ---
+# Authentication
 if "authenticated" not in st.session_state:
     st.session_state["authenticated"] = False
 
@@ -20,9 +20,10 @@ if not st.session_state["authenticated"]:
     show_login()
     st.stop()
 
+# Show user info
 show_user_header()
 
-# --- Load custom CSS ---
+# Apply custom CSS
 def local_css(file_name):
     try:
         with open(file_name) as f:
@@ -32,40 +33,37 @@ def local_css(file_name):
 
 local_css("styles.css")
 
-# --- Ticker input ---
+# Ticker input
 ticker = st.text_input("Enter Stock Ticker Symbol (e.g., AAPL, TSLA, INFY):", "INFY.NS")
 
-# --- Download data with fallback ---
+# Download data with fallback
 try:
     df = yf.download(ticker, start='2015-01-01', end='2024-12-31')
     if df.empty:
-        raise ValueError(f"No data found for '{ticker}'")
+        raise ValueError(f"⚠️ No data found for '{ticker}'. Please try another valid symbol.")
+    df.index = pd.to_datetime(df.index)
 except Exception as e:
     st.warning(f"⚠️ Online fetch failed: {e}. Trying fallback data...")
     try:
         df = pd.read_csv("fallback_data.csv", index_col=0)
-        st.success("✅ Fallback data loaded from fallback_data.csv.")
+        df.index = pd.to_datetime(df.index)
+        st.success("✅ Loaded fallback stock data.")
     except FileNotFoundError:
         st.error("❌ No fallback data found. Please upload 'fallback_data.csv'.")
         st.stop()
 
-# --- Ensure datetime index ---
-if not pd.api.types.is_datetime64_any_dtype(df.index):
-    df.index = pd.to_datetime(df.index, errors='coerce')
-df = df[~df.index.isna()]
-
-# --- Show data ---
+# Show raw data
 st.subheader(f"📄 Raw Data for {ticker}")
 st.dataframe(df.tail())
 
-# --- Closing Price Chart ---
+# Plot closing prices
 st.subheader("📉 Closing Price Trend")
 fig, ax = plt.subplots()
 df['Close'].plot(ax=ax, title=f"{ticker} - Closing Prices", color='blue')
 ax.set_ylabel("Price")
 st.pyplot(fig)
 
-# --- Model selection ---
+# Model selection
 st.subheader("🔮 Choose a Forecasting Model")
 model_choice = st.selectbox("Select Model", ["None", "ARIMA", "Prophet", "LSTM"])
 
@@ -81,7 +79,7 @@ elif model_choice == "LSTM":
     with st.expander("🧠 LSTM Forecast"):
         lstm_model.run_lstm(df)
 
-# --- Model Scores ---
+# Model performance
 st.subheader("📊 Model Performance Comparison")
 scores = get_all_scores()
 
@@ -107,7 +105,7 @@ if scores:
 else:
     st.info("ℹ️ Run at least one model to see comparison.")
 
-# --- Extra Visualizations ---
+# Extra visualizations
 with st.expander("📊 Extra Data Visualizations"):
     if isinstance(df.columns, pd.MultiIndex):
         df.columns = df.columns.map(lambda x: x[0])
@@ -163,30 +161,28 @@ with st.expander("📊 Extra Data Visualizations"):
     candlestick.update_layout(title=f"{ticker} - Candlestick Chart", xaxis_title="Date", yaxis_title="Price")
     st.plotly_chart(candlestick)
 
-    # 📆 Monthly Average Close Price
-st.write("### 📆 Monthly Average Close Price")
+    st.write("### 📆 Monthly Average Close Price")
 
-# 🔐 Ensure datetime index
-if not pd.api.types.is_datetime64_any_dtype(df.index):
+    # 🔐 Ensure datetime index
+    if not pd.api.types.is_datetime64_any_dtype(df.index):
+        try:
+            df.index = pd.to_datetime(df.index)
+        except Exception as e:
+            st.error(f"❌ Cannot convert index to datetime: {e}")
+            st.stop()
+
     try:
-        df.index = pd.to_datetime(df.index)
+        monthly_avg = df['Close'].resample('M').mean()
+        monthly_df = pd.DataFrame({'Month': monthly_avg.index, 'AvgClose': monthly_avg.values})
+        fig_month = px.bar(
+            monthly_df, x='Month', y='AvgClose',
+            title="Monthly Average Close Price", color='AvgClose'
+        )
+        fig_month.update_traces(marker_color='teal')
+        st.plotly_chart(fig_month)
     except Exception as e:
-        st.error(f"❌ Cannot convert index to datetime: {e}")
-        st.stop()
+        st.error(f"❌ Failed to plot monthly average: {e}")
 
-try:
-    monthly_avg = df['Close'].resample('M').mean()
-    monthly_df = pd.DataFrame({'Month': monthly_avg.index, 'AvgClose': monthly_avg.values})
-
-    fig_month = px.bar(
-        monthly_df, x='Month', y='AvgClose',
-        title="Monthly Average Close Price",
-        color='AvgClose'
-    )
-    fig_month.update_traces(marker_color='teal')
-    st.plotly_chart(fig_month)
-except Exception as e:
-    st.error(f"❌ Failed to plot monthly average: {e}")
 
 
 
