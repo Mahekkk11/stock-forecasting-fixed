@@ -163,10 +163,10 @@ with st.expander("📊 Extra Data Visualizations"):
     candlestick.update_layout(title=f"{ticker} - Candlestick Chart", xaxis_title="Date", yaxis_title="Price")
     st.plotly_chart(candlestick)
 
-    # Monthly Average Close Price
-    st.write("### 📆 Monthly Average Close Price")
+    # 📆 Monthly Average Close Price
+st.write("### 📆 Monthly Average Close Price")
 
-    # 🔐 Ensure datetime index
+# 🔐 Ensure datetime index
 if not pd.api.types.is_datetime64_any_dtype(df.index):
     try:
         df.index = pd.to_datetime(df.index)
@@ -187,6 +187,7 @@ try:
     st.plotly_chart(fig_month)
 except Exception as e:
     st.error(f"❌ Failed to plot monthly average: {e}")
+
 
 
 
