@@ -63,7 +63,7 @@ def show_login():
 
     tabs = st.tabs(["🔐 Login", "✍️ Register"])
 
-    # ---------------- LOGIN ----------------
+    # --------------------- LOGIN ---------------------
     with tabs[0]:
         with st.form("login_form"):
             email = st.text_input("Email", key="login_email")
@@ -72,8 +72,10 @@ def show_login():
             login_btn = st.form_submit_button("Login")
 
             if login_btn:
-                if not email or not password:
-                    st.error("❗ Both email and password are required.")
+                if not email.strip():
+                    st.error("❗ Email is required.")
+                elif not password.strip():
+                    st.error("❗ Password is required.")
                 elif not re.match(r"^[\w\.-]+@[\w\.-]+\.\w+$", email):
                     st.error("❗ Enter a valid email address.")
                 else:
@@ -87,40 +89,37 @@ def show_login():
                             st.session_state["user"] = user_data
                             if remember:
                                 streamlit_js_eval(js_expressions=f"localStorage.setItem('user', `{user_data}`)", key="set_user")
-                            st.success("✅ Login successful!")
-                            st.experimental_rerun()
-                        else:
-                            st.error("❌ User data not found.")
+                            st.rerun()
                     except Exception as e:
-                        st.error("❌ Login Failed: Incorrect email or password.")
+                        st.error(f"❌ Login Failed: {e}")
 
         with st.expander("Forgot Password?"):
             with st.form("forgot_form"):
                 reset_email = st.text_input("Enter your email to reset")
                 reset_submit = st.form_submit_button("Send Reset Link")
                 if reset_submit:
-                    if not reset_email or not re.match(r"^[\w\.-]+@[\w\.-]+\.\w+$", reset_email):
+                    if not re.match(r"^[\w\.-]+@[\w\.-]+\.\w+$", reset_email):
                         st.error("❗ Enter a valid email address.")
                     else:
                         try:
                             auth.send_password_reset_email(reset_email)
                             st.success("📧 Reset link sent to your email.")
                         except Exception as e:
-                            st.error(f"❌ Error sending reset email.")
+                            st.error(f"❌ Error: {e}")
 
-    # ---------------- REGISTER ----------------
+    # --------------------- REGISTER ---------------------
     with tabs[1]:
         with st.form("register_form"):
-            first = st.text_input("First Name")
-            last = st.text_input("Last Name")
-            email = st.text_input("Email")
-            password = st.text_input("Password", type="password")
-            confirm = st.text_input("Confirm Password", type="password")
+            first = st.text_input("First Name", key="reg_first")
+            last = st.text_input("Last Name", key="reg_last")
+            email = st.text_input("Email", key="reg_email")
+            password = st.text_input("Password", type="password", key="reg_password")
+            confirm = st.text_input("Confirm Password", type="password", key="reg_confirm")
             remember = st.checkbox("Remember Me", key="register_remember")
             register_btn = st.form_submit_button("Register")
 
             if register_btn:
-                if not first or not last:
+                if not first.strip() or not last.strip():
                     st.error("❗ Please fill in your full name.")
                 elif not re.match(r"^[\w\.-]+@[\w\.-]+\.\w+$", email):
                     st.error("❗ Enter a valid email address.")
@@ -139,7 +138,7 @@ def show_login():
                         }
                         firestore_db.collection("users").document(uid).set(user_data)
                         st.success("✅ Registered successfully. Please log in.")
-                        st.session_state.login_tab = 0
+                        st.session_state.login_tab = 0  # go to login tab
                         st.experimental_rerun()
                     except Exception as e:
                         if "EMAIL_EXISTS" in str(e):
@@ -147,9 +146,11 @@ def show_login():
                         else:
                             st.error(f"❌ Registration Error: {e}")
 
+    # 🔐 Fake Google Login Button (disabled)
     st.markdown("<hr>", unsafe_allow_html=True)
-    if st.button("🔐 Sign in with Google (Coming Soon)"):
-        st.info("⚙️ Stay tuned — Google login is coming soon!")
+    if st.button("🔐 Sign in with Google (Coming Soon)", disabled=True):
+        st.info("⚙️ Google sign-in is coming soon.")
+
 
 # Show user info
 def show_user_header():
