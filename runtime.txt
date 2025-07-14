@@ -1,0 +1,2 @@
+python-3.10
+Add runtime.txt to set Python version to 3.10
