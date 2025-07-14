@@ -1,0 +1,121 @@
+/* Responsive fix for mobile */
+@media screen and (max-width: 768px) {
+    .stApp {
+        padding: 1rem;
+        max-width: 100% !important;
+    }
+
+    h1, h2, h3, h4, h5 {
+        font-size: 1.2rem !important;
+        text-align: center !important;
+    }
+
+    .css-1cpxqw2 {
+        font-size: 0.85rem !important;
+    }
+
+    input, .stButton > button, .stDownloadButton > button {
+        font-size: 0.9rem !important;
+        width: 100% !important;
+    }
+
+    .stForm {
+        padding: 0 !important;
+    }
+
+    .stTabs [role="tab"] {
+        font-size: 0.85rem !important;
+        padding: 6px 12px !important;
+    }
+
+    .css-1d391kg {
+        font-size: 0.8rem !important;
+    }
+
+    .stMarkdown h3 {
+        font-size: 1.2rem !important;
+    }
+
+    .block-container {
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+    }
+}
+
+/* Overall background and text */
+body {
+    background-color: #f4f6f9;
+    color: #1e1e1e;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+/* Headings */
+h1, h2, h3 {
+    color: #2c3e50;
+    font-weight: 700;
+}
+
+/* Subheaders (Streamlit uses these a lot) */
+.block-container > div > div > h2 {
+    color: #34495e;
+    border-bottom: 2px solid #ecf0f1;
+    padding-bottom: 5px;
+}
+
+/* DataFrames */
+.css-1d391kg {
+    background-color: #ffffff;
+    border: 1px solid #dcdcdc;
+    border-radius: 8px;
+    padding: 10px;
+    box-shadow: 0px 2px 4px rgba(0,0,0,0.05);
+}
+
+/* Buttons */
+.stButton > button {
+    background-color: #2ecc71;
+    color: white;
+    font-weight: bold;
+    border: none;
+    border-radius: 6px;
+    padding: 0.5rem 1rem;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.stButton > button:hover {
+    background-color: #27ae60;
+    transform: scale(1.05);
+}
+
+/* Download Button */
+.stDownloadButton > button {
+    background-color: #3498db;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 0.5rem 1rem;
+    transition: background-color 0.3s ease;
+}
+
+.stDownloadButton > button:hover {
+    background-color: #2980b9;
+}
+
+/* Select Box & Text Inputs */
+.stSelectbox, .stTextInput {
+    padding: 6px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    background-color: #ffffff;
+}
+
+/* Markdown / Title transition */
+h1 {
+    animation: fadeInUp 0.6s ease-in-out;
+}
+
+/* Animation Keyframes */
+@keyframes fadeInUp {
+    0% { opacity: 0; transform: translateY(10px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
