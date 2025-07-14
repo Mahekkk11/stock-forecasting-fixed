@@ -67,3 +67,4 @@ urllib3==2.2.1
 watchdog==3.0.0
 wrapt==1.15.0
 yfinance==0.2.36
+setuptools
